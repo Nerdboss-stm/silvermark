@@ -14,10 +14,11 @@ from __future__ import annotations
 import mmh3
 import numpy as np
 
-# A large Mersenne prime. Standard choice for integer MinHash; bigger than
-# any 32-bit hash output so the modulo is non-degenerate.
-_PRIME = (1 << 61) - 1
-_MAX_HASH = (1 << 32) - 1
+# Mersenne prime M31 = 2^31 - 1 = 2147483647. The prime has to be < 2^32
+# so that (a * h + b) stays within uint64 without overflow when both a and h
+# are reduced mod p. A 2^61 prime overflows; tests will catch this.
+_PRIME = np.uint64((1 << 31) - 1)
+_MAX_HASH = np.uint64((1 << 31) - 1)
 
 
 def shingle(text: str, k: int = 9) -> set[str]:
@@ -49,15 +50,18 @@ def minhash_signature(
     fraction of equal positions is an estimate of Jaccard.
     """
     rng = np.random.default_rng(seed)
-    a = rng.integers(1, _PRIME, size=num_perm, dtype=np.int64).astype(np.uint64)
-    b = rng.integers(0, _PRIME, size=num_perm, dtype=np.int64).astype(np.uint64)
+    p = int(_PRIME)
+    a = rng.integers(1, p, size=num_perm, dtype=np.int64).astype(np.uint64)
+    b = rng.integers(0, p, size=num_perm, dtype=np.int64).astype(np.uint64)
 
     sig = np.full(num_perm, _MAX_HASH, dtype=np.uint64)
     if not shingles:
         return sig
 
     for s in shingles:
-        h = np.uint64(mmh3.hash(s, signed=False))
+        # Reduce hash into [0, p) so the (a * h + b) multiplication stays
+        # within uint64. mmh3 returns up to 2^32 - 1, which is larger than p.
+        h = np.uint64(mmh3.hash(s, signed=False) % p)
         candidate = (a * h + b) % _PRIME
         sig = np.minimum(sig, candidate)
     return sig

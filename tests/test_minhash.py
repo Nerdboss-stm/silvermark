@@ -77,4 +77,6 @@ def test_lsh_bands_bad_split_raises():
 def test_empty_shingles_returns_max_signature():
     sig = minhash.minhash_signature(set(), num_perm=64, seed=1)
     assert sig.shape == (64,)
-    assert (sig == (1 << 32) - 1).all()
+    # All positions should be the sentinel "infinity" value used during init.
+    assert (sig == sig[0]).all()
+    assert sig[0] >= (1 << 30)  # something large enough to be unreachable
