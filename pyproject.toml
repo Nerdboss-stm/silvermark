@@ -3,7 +3,7 @@ name = "silvermark"
 version = "0.0.1"
 description = "Provenance and immutability checks for Iceberg lakehouses"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [{name = "Saran Teja Mallela", email = "saran@stmallela.com"}]
 keywords = ["iceberg", "lakehouse", "minhash", "deduplication", "data-quality"]
@@ -11,6 +11,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Database",
@@ -29,6 +30,9 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.4",
     "mypy>=1.0",
+    # SqlCatalog (used in tests only) needs sqlalchemy. Production users
+    # bring their own pyiceberg catalog (Glue, Hive, REST) and don't need it.
+    "sqlalchemy>=2.0",
 ]
 
 [project.urls]
@@ -41,11 +45,12 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
-ignore = ["E501"]
+# UP017 prefers datetime.UTC but that's 3.11+; we still support 3.10.
+ignore = ["E501", "UP017"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

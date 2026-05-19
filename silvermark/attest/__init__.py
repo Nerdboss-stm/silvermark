@@ -1,10 +1,17 @@
 """Snapshot-level hash attestation for Iceberg tables."""
 
-# Implementations land in v0.1.
+from silvermark.attest.snapshot import (
+    DataFileRef,
+    SnapshotFingerprint,
+    fingerprint_data_files,
+    from_iceberg_snapshot,
+    verify,
+)
 
-
-def snapshot_hash(*args, **kwargs):  # pragma: no cover
-    raise NotImplementedError(
-        "snapshot_hash is on the v0.1 roadmap. "
-        "Track at https://github.com/Nerdboss-stm/silvermark/issues/3"
-    )
+__all__ = [
+    "DataFileRef",
+    "SnapshotFingerprint",
+    "fingerprint_data_files",
+    "from_iceberg_snapshot",
+    "verify",
+]

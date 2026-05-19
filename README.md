@@ -52,20 +52,35 @@ You load the text columns yourself with pyiceberg or duckdb and pass them in as 
 
 ### snapshot attestation
 
-Coming in v0.1. The plan is `attest.snapshot_hash(table, snapshot_id) -> str`, returning a hash over the manifest list so you can prove a snapshot you ran against earlier hasn't shifted.
+```python
+from silvermark.attest import from_iceberg_snapshot, verify
+
+# at the time you run your eval, fingerprint the snapshot
+fp = from_iceberg_snapshot(table, snapshot_id=4429181903)
+print(fp.fingerprint)         # 64-char sha256 hex
+print(fp.data_file_count)     # how many files this snapshot references
+
+# write fp.fingerprint to your eval-run log alongside scores
+
+# weeks later, prove the snapshot is unchanged
+assert verify(table, snapshot_id=4429181903, expected=fp.fingerprint)
+```
+
+The fingerprint is deterministic over the snapshot's data file list (path, size, record count), sorted by path. It does not depend on pyiceberg's manifest-traversal order, so the same snapshot fingerprints the same way across runs and across catalogs.
+
+If the snapshot has been expired (via `expire_snapshots`), `from_iceberg_snapshot` raises `ValueError`. That is intentionally a different error than "fingerprint mismatch" because the data is gone, not drifting.
 
 ## what works today
 
 - Read-only. silvermark never modifies tables.
 - Pure Python. No Spark, no JVM. Tested on 8 GB laptops.
-- 31 tests, all passing.
+- 48 tests passing including real Iceberg round-trips via pyiceberg's SqlCatalog.
 
 ## what does not work yet
 
-- Iceberg-table-identifier wrappers. v0 takes iterables of strings; v0.1 adds `from_iceberg(table_id)` helpers.
-- Snapshot attestation module is stubbed (raises `NotImplementedError`). Coming in v0.1.
+- Iceberg-table-identifier wrappers for dedup and contamination. v0 takes iterables of strings; you load text via pyiceberg or duckdb yourself. The `attest` module already takes a real Iceberg `Table`.
 - Distributed MinHash. Single-node only, fine up to about 100M shingles. For bigger, use Spark.
-- Snowflake-managed Iceberg tables.
+- Snowflake-managed Iceberg tables (only externally-managed via Glue, Hive, REST, or SQL catalogs).
 
 ## design notes
 
