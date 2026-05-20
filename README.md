@@ -25,12 +25,20 @@ Needs Python 3.11+, pyiceberg 0.7+, duckdb 0.10+.
 ```python
 from silvermark.dedup import shingle, minhash_signature, jaccard_estimate
 
-a = minhash_signature(shingle("the quick brown fox jumps over the lazy dog"), num_perm=128, seed=1)
-b = minhash_signature(shingle("the quick brown fox jumped over a lazy dog"), num_perm=128, seed=1)
-print(jaccard_estimate(a, b))  # estimated Jaccard, e.g. 0.62
+# Use a smaller k for short texts. Default is k=9, which means each shingle
+# is 9 consecutive words; that's right for paragraph-length notes but too
+# coarse for a single sentence.
+a_sh = shingle("the patient was discharged in stable condition after 48 hours", k=3)
+b_sh = shingle("patient was discharged in stable condition after 48 hours of observation", k=3)
+
+a = minhash_signature(a_sh, num_perm=128, seed=1)
+b = minhash_signature(b_sh, num_perm=128, seed=1)
+print(f"{jaccard_estimate(a, b):.3f}")  # ~0.7 (true Jaccard 7/10 = 0.700)
 ```
 
 For bucketing candidate pairs at scale, `lsh_bands(sig, bands, rows)` splits a signature into LSH bands. Pick `(bands, rows)` so `bands * rows == num_perm` and the s-curve threshold `(1 / bands) ** (1 / rows)` matches the Jaccard cutoff you want.
+
+A larger end-to-end example (Iceberg tables + all three modules) is at `examples/pulsetrack/run.py`.
 
 ### contamination check between two corpora
 
