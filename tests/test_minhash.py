@@ -80,3 +80,23 @@ def test_empty_shingles_returns_max_signature():
     # All positions should be the sentinel "infinity" value used during init.
     assert (sig == sig[0]).all()
     assert sig[0] >= (1 << 30)  # something large enough to be unreachable
+
+
+def test_readme_quickstart_estimate_is_close_to_true_jaccard():
+    """The README claims this exact code produces an estimate near 0.7.
+    If we change the algorithm or the constants, this test breaks loudly
+    so we remember to update the README."""
+    a_sh = minhash.shingle(
+        "the patient was discharged in stable condition after 48 hours", k=3
+    )
+    b_sh = minhash.shingle(
+        "patient was discharged in stable condition after 48 hours of observation", k=3
+    )
+    true_jaccard = len(a_sh & b_sh) / len(a_sh | b_sh)
+    assert true_jaccard == pytest.approx(0.7, abs=0.01)
+
+    a = minhash.minhash_signature(a_sh, num_perm=128, seed=1)
+    b = minhash.minhash_signature(b_sh, num_perm=128, seed=1)
+    estimate = minhash.jaccard_estimate(a, b)
+    # 128 perms has stderr ~0.045 on a true Jaccard of 0.7. Allow 3x stderr.
+    assert estimate == pytest.approx(true_jaccard, abs=0.15)
