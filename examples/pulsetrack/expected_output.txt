@@ -1,0 +1,28 @@
+# One sample run. The workdir, snapshot IDs, and fingerprint hex vary
+# every run (tmpdir is randomized, Iceberg assigns snapshot IDs at commit).
+# The shape of the output and the deterministic fields below do not vary.
+
+workdir: /var/folders/.../silvermark-pulsetrack-XXXXXXXX
+
+=== dedup: near-duplicate sensor rows ===
+checked 100 rows, found 25 near-duplicate pairs
+          r-00001  ~  r-dup-00001      jaccard=1.000
+          r-00002  ~  r-00052          jaccard=0.922
+          r-00002  ~  r-dup-00002      jaccard=1.000
+          r-00003  ~  r-dup-00003      jaccard=1.000
+          r-00004  ~  r-dup-00004      jaccard=0.906
+  ... and 20 more
+
+=== contamination: train vs eval clinical notes ===
+train n-grams: 384
+eval  n-grams: 151
+overlap:       59 (39.07%)
+is_contaminated(threshold=0.005): True
+example overlapping n-grams: [' 48 hour', ' after 4', ' conditi']
+
+=== attest: snapshot fingerprint across a new write ===
+snapshot at t1:  <random Iceberg-assigned int>
+fingerprint:     <64-char sha256 hex, deterministic for the data above>
+files at t1:     1
+snapshot at t2:  <different random int>  (after extra append)
+old fingerprint still verifies against t1 snapshot: True

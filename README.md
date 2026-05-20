@@ -70,6 +70,10 @@ The fingerprint is deterministic over the snapshot's data file list (path, size,
 
 If the snapshot has been expired (via `expire_snapshots`), `from_iceberg_snapshot` raises `ValueError`. That is intentionally a different error than "fingerprint mismatch" because the data is gone, not drifting.
 
+## end-to-end example
+
+`examples/pulsetrack/run.py` builds a tiny PulseTrack-shaped lakehouse (two Iceberg tables via pyiceberg + SqlCatalog), runs all three modules on it, and prints a report. About 30 seconds on a laptop. No AWS, no Docker. See `examples/pulsetrack/README.md` and `examples/pulsetrack/expected_output.txt`.
+
 ## what works today
 
 - Read-only. silvermark never modifies tables.
