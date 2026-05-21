@@ -1,5 +1,9 @@
 # silvermark
 
+[![tests](https://github.com/Nerdboss-stm/silvermark/actions/workflows/test.yml/badge.svg)](https://github.com/Nerdboss-stm/silvermark/actions/workflows/test.yml)
+[![python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/Nerdboss-stm/silvermark)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Provenance and immutability checks for Iceberg lakehouses.
 
 Three things in one library:
@@ -8,15 +12,21 @@ Three things in one library:
 - **contamination** - n-gram overlap between two text corpora (train vs eval leakage)
 - **attest** - snapshot-level hash attestation so you can prove an eval set hasn't moved
 
-Built after I spent a week last quarter trying to convince myself that the eval set we shipped was actually the eval set we trained against. The answer was "probably, but I can't prove it." This is the proof.
+## why this exists
+
+Last week I left a Spark Structured Streaming job running with `trigger(processingTime=5s)` overnight and no scheduled compaction. By morning the bronze Iceberg table had 850,212 files at 12 KB each. Every query stalled in the Catalyst planner.
+
+The recovery took about 24 minutes of real `rewrite_data_files` work and 6 hours of YARN config archaeology. After that mess, I tried to run an eval against the silver layer. I couldn't prove the snapshot I was reading was the same snapshot I'd evaluated against the previous week. `expire_snapshots` had run between the two evals. The snapshot ID matched on paper. Whether the underlying files were identical, I had no way to check without manually reading manifests.
+
+That's the gap silvermark fills. Save a fingerprint at eval time, verify it later. Run an n-gram check between train and eval and see how much overlap is hiding in your "clean" split. Find near-duplicate rows that slipped through the dedup you thought worked.
 
 ## install
 
 ```
-pip install silvermark
+pip install git+https://github.com/Nerdboss-stm/silvermark.git@main
 ```
 
-Needs Python 3.11+, pyiceberg 0.7+, duckdb 0.10+.
+PyPI publish is coming with v0.1. Needs Python 3.10+, pyiceberg 0.7+, duckdb 0.10+.
 
 ## quickstart
 
