@@ -4,6 +4,11 @@ All notable changes go here. Format roughly follows Keep a Changelog.
 
 ## [Unreleased]
 
+### added
+- `contamination.ngram_overlap_iceberg(train_table, eval_table, column, ...)` - convenience wrapper that takes two pyiceberg `Table` objects directly, reads a named text column via projection, and runs n-gram overlap. Removes the manual scan + to_pylist boilerplate that v0.0.1 callers had to write.
+- `contamination.column_ngrams_from_table(table, column, ...)` - the underlying helper, also exported. Use it if you want to compute n-grams on a single table and intersect manually.
+- 7 new tests covering identical-corpus, disjoint-corpus, realistic partial-overlap, null-handling, missing-column error path, and sampling reproducibility.
+
 ## [0.0.1] - 2026-05-21
 
 First public release. Three modules, 49 tests, end-to-end example.

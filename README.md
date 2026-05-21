@@ -66,7 +66,20 @@ if report.is_contaminated(threshold=0.005):
     print("warning: leakage above 0.5% threshold")
 ```
 
-You load the text columns yourself with pyiceberg or duckdb and pass them in as iterables of strings. A wrapper that takes Iceberg table identifiers directly is on the v0.1 roadmap.
+If you'd rather hand it Iceberg tables directly (no manual scan + to_pylist), there's a wrapper:
+
+```python
+from pyiceberg.catalog import load_catalog
+from silvermark.contamination import ngram_overlap_iceberg
+
+catalog = load_catalog("default", **{"type": "glue", "glue.region": "us-east-1"})
+train = catalog.load_table("warehouse.silver.training_v3")
+eval_  = catalog.load_table("warehouse.silver.eval_v1")
+
+report = ngram_overlap_iceberg(train, eval_, column="note", n=8)
+```
+
+The wrapper does projection on only the named column, so it doesn't materialize the rest of the row.
 
 ### snapshot attestation
 
@@ -100,7 +113,7 @@ If the snapshot has been expired (via `expire_snapshots`), `from_iceberg_snapsho
 
 ## what does not work yet
 
-- Iceberg-table-identifier wrappers for dedup and contamination. v0 takes iterables of strings; you load text via pyiceberg or duckdb yourself. The `attest` module already takes a real Iceberg `Table`.
+- Iceberg-table wrapper for `dedup`. The `attest` and `contamination` modules already take real Iceberg `Table`s; `dedup` still expects iterables of strings.
 - Distributed MinHash. Single-node only, fine up to about 100M shingles. For bigger, use Spark.
 - Snowflake-managed Iceberg tables (only externally-managed via Glue, Hive, REST, or SQL catalogs).
 
